@@ -115,7 +115,7 @@ function script_init() {
     script_tempdir=$(mktemp --directory -t tmp.XXXXXXXXXX)
     script_tempfile=$(mktemp -t tmp.XXXXXXXXXX)
 
-    IFS=$'\n\t'
+    #IFS=$'\n\t'
 }
 
 function ctrl_c_trapper() {
@@ -134,6 +134,7 @@ function err_trapper() {
 
     critical "An exception ocurred near line ${BASH_LINENO[0]}"
     inf "Script Parameters: '${script_params}'"
+
     exit "${exitcode}"
 }
 
@@ -145,9 +146,9 @@ function exit_trapper {
 
     do_cd "${origin_cwd}" || warning "Couldn't cd back to '${origin_cwd}'"
 
-    do_rm --recursive --force "${script_tempdir}" \
+    do_rm --recursive --force "${script_tempdir}"        \
         || warning "Couldn't remove '${script_tempdir}'"
-    do_rm --recursive --force "${script_tempfile}" \
+    do_rm --recursive --force "${script_tempfile}"        \
         || warning "Couldn't remove '${script_tempfile}'"
 
     do_unset
@@ -157,7 +158,7 @@ function exit_trapper {
 
 function help_usage() {
 
-    printf "Usage: "
+    do_printf "Usage: "
     do_help "usg"
 }
 
@@ -171,12 +172,12 @@ function do_help() {
     local filter_type
     filter_type="${1}"
 
-    if [[ "${filter_type}" == "usg" ]]; then filter="^#+[ ]*"; fi
-    if [[ "${filter_type}" == "ful" ]]; then filter="^#[%/)+]" ; fi
+    if [[ "${filter_type}" == "usg" ]]; then filter="^#+[ ]*" ; fi
+    if [[ "${filter_type}" == "ful" ]]; then filter="^#[%/)+]"; fi
 
-    \head -"${script_head:-99}" "${0}"           \
-        | \grep --regexp="${filter:-y^#-}"       \
-        | sed --expression="s/${filter:-^#-}//g" \
+    \head -"${script_head:-99}" "${0}"                        \
+        | \grep --regexp="${filter:-y^#-}"                    \
+        | sed --expression="s/${filter:-^#-}//g"              \
             --expression="s/\${script_name}/${script_name}/g"
 }
 
@@ -231,48 +232,73 @@ function log() {
 
     if [[ "${script_loglevel}" -ge "${1}" ]]; then
         do_printf "${termlogformat}"
-        do_echo "${filelogformat}" | fold -w79 -s | sed '2~1s/^/  /' >> "${script_log:-/dev/null}"
     fi
+
+    do_echo "${filelogformat}" | fold -w79 -s | sed '2~1s/^/  /' >> "${script_log:-/dev/null}"
 }
 
+# shellcheck disable=SC2015
 function do_grep() {
 
-    command grep "${@}"
+    command grep "${@}"                                            \
+        && debug "(${BASH_LINENO[0]}) 'grep ${*}'"                 \
+        || error "'grep ${*}' failed near line ${BASH_LINENO[0]}!"
 }
 
+# shellcheck disable=SC2015
 function do_cd() {
 
-    command cd "${@}"
+    command cd "${@}"                                            \
+        && debug "(${BASH_LINENO[0]}) 'cd ${*}'"                 \
+        || error "'cd ${*}' failed near line ${BASH_LINENO[0]}!"
 }
 
+# shellcheck disable=SC2015
 function do_cp() {
 
-    command cp "${@}"
+    command cp "${@}"                                            \
+        && debug "(${BASH_LINENO[0]}) 'cp ${*}'"                 \
+        || error "'cp ${*}' failed near line ${BASH_LINENO[0]}!"
 }
 
+# shellcheck disable=SC2015
 function do_mv() {
 
-    command mv "${@}"
+    command mv "${@}"                                            \
+        && debug "(${BASH_LINENO[0]}) 'mv ${*}'"                 \
+        || error "'mv ${*}' failed near line ${BASH_LINENO[0]}!"
 }
 
+# shellcheck disable=SC2015
 function do_mkdir() {
 
-    command mkdir "${@}"
+    command mkdir "${@}"                                            \
+        && debug "(${BASH_LINENO[0]}) 'mkdir ${*}'"                 \
+        || error "'mkdir ${*}' failed near line ${BASH_LINENO[0]}!"
 }
 
+# shellcheck disable=SC2015
 function do_touch() {
 
-    command touch "${@}"
+    command touch "${@}"                                            \
+        && debug "(${BASH_LINENO[0]}) 'touch ${*}'"                 \
+        || error "'touch ${*}' failed near line ${BASH_LINENO[0]}!"
 }
 
+# shellcheck disable=SC2015
 function do_ln() {
 
-    command ln "${@}"
+    command ln "${@}"                                            \
+        && debug "(${BASH_LINENO[0]}) 'ln ${*}'"                 \
+        || error "'ln ${*}' failed near line ${BASH_LINENO[0]}!"
 }
 
+# shellcheck disable=SC2015
 function do_rm() {
 
-    command rm "${@}"
+    command rm "${@}"                                            \
+        && debug "(${BASH_LINENO[0]}) 'rm ${*}'"                 \
+        || error "'rm ${*}' failed near line ${BASH_LINENO[0]}!"
 }
 
 function do_echo() {
@@ -285,7 +311,7 @@ function do_printf() {
     command printf "%b%b\n" "${*}" "$(color nc)" 2>/dev/null
 }
 
-function do_prompt() {
+function do_printf_n() {
 
     command printf "%b%b" "${*}" "$(color nc)" 2>/dev/null
 }
@@ -319,20 +345,27 @@ function color() {
 }
 
 function check_binary() {
+
     if [[ "${#}" -lt 1 ]]; then
-        error " Missing required argument to 'check_binary()' near line (${BASH_LINENO[0]})"
+        error "Missing required argument to 'check_binary()' near line (${BASH_LINENO[0]})"
         exit 1
     fi
 
     local do_exit
+
     local i
     for i in "${@}"; do
-        if [[ "${i}" =~ ^(-e|--exit)$ ]];then do_exit=1 && continue; fi
+
+        if [[ "${i}" =~ ^(-e|--exit)$ ]];then
+            do_exit=1
+            continue
+        fi
 
         if ! command -v "${i}" > /dev/null 2>&1; then
             critical "Missing dependency: Couldn't locate '${i}'. (${BASH_LINENO[0]})"
             continue
         fi
+
         inf "Found dependency: '${i}'"
     done
 
@@ -342,8 +375,9 @@ function check_binary() {
 }
 
 function validade_str() {
+
     if [[ "${#}" -lt 1 ]]; then
-        error " Missing required argument to 'validade_str()' near line (${BASH_LINENO[0]})"
+        error "Missing required argument to 'validade_str()' near line (${BASH_LINENO[0]})"
         exit 1
     fi
 
@@ -365,7 +399,70 @@ function validade_str() {
     fi
 }
 
+# shellcheck disable=SC2120
+function do_countdown() {
+
+    local seconds
+    seconds="${1:-5}"
+
+    for ((i = seconds ; i > -1 ; i--)); do
+        do_printf_n "$(color e)Continuing in: ${i}\r"
+        sleep 1
+    done
+
+    do_echo ""
+}
+
+# shellcheck disable=SC2015
+function create() {
+
+    local option
+    local path
+    option="${1}"; shift
+    path=( "${@}" )
+
+    case "${option}" in
+        -f | --file )
+            for file in "${path[@]}"; do
+                if [[ -f "${file}" ]]; then
+                    debug "(${BASH_LINENO[0]}) File: '${file}' already found.."
+                    continue
+                fi
+                do_mkdir --parents "$(dirname "${file}")"   \
+                    && do_touch "${file}"                   \
+                    ||  {
+                            error "Couldn't create ${file}"
+                            exit 2
+                        }
+                debug "(${BASH_LINENO[0]}) Created file: ${file}"
+            done
+            ;;
+        -d | --directory )
+            for dir in "${path[@]}"; do
+                if [[ -d "${dir}" ]]; then
+                    debug "(${BASH_LINENO[0]}) Directory: '${dir}' already found.."
+                    continue
+                fi
+                do_mkdir --parents "${dir}"                \
+                    ||  {
+                            error "Couldn't create ${dir}"
+                            exit 2
+                        }
+                debug "(${BASH_LINENO[0]}) Created directory: ${dir}"
+            done
+            ;;
+        * )
+            error "Usage: create [OPTION..] [PATH..]"
+            error ""
+            error "Options:"
+            error "    -f, --file"
+            error "    -d, --directory"
+            ;;
+    esac
+}
+
 function do_unset() {
+
     unset -v origin_cwd script_head script_name script_dir script_path      \
         script_params script_log script_loglevel script_tempdir             \
         script_tempfile IFS filter_type filter loglevels loglevel logcolors \
@@ -374,7 +471,9 @@ function do_unset() {
     unset -f script_init ctrl_c_trapper err_trapper exit_trapper help_usage  \
         help_full do_help critical error warning inf debug trace log do_grep \
         do_cd do_cp do_mv do_mkdir do_touch do_ln do_rm do_echo do_printf    \
-        do_prompt color check_binary validade_str do_unset main
+        do_printf_n color check_binary validade_str do_countdown create main
+
+    unset -f do_unset # this ensures the 'do_unset' function is the last one.
 }
 
 # Section: Main Program
@@ -399,7 +498,7 @@ function main() {
         esac
     done
 
-    while true; do
+    while [[ "${#}" -gt 0 ]]; do
         case "${1:-}" in
             -l | --log-file )
                 shift
@@ -414,19 +513,18 @@ function main() {
                 if [[ ! "${1:-}" =~ ^(0|1|2|3|4|5)$ ]]; then
                     warning "Logging levels are: [0 (CRITICAL)] [1 (ERROR)] [2 (WARNING)] [3 (INFO)] [4 (DEBUG)] [5 (TRACE)]"
                     warning "Try './${script_name} --help' for more information."
-                    exit
+                    exit 1
                 fi
                 script_loglevel="${1}"
                 ;;
             -o | --option )
                 :
-                break
                 ;;
             * )
                 help_usage
                 warning "Invalid or missing option '${1:-}' !"
                 warning "Try './${script_name} --help' for more information."
-                exit
+                exit 1
                 ;;
         esac
         shift
