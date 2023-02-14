@@ -103,7 +103,7 @@ function script_init() {
 
     origin_cwd="${PWD}"
 
-    script_head=$(grep --no-messages --line-number "^# END_OF_HEADER" "${0}" | head -1 | cut --fields=1 --delimiter=:)
+    script_head=$(do_grep --no-messages --line-number "^# END_OF_HEADER" "${0}" | head -1 | cut --fields=1 --delimiter=:)
     script_name="$(basename "${0}")"
     script_dir="$(cd "$(dirname "${0}")" && \pwd )"
     script_path="${script_dir}/${script_name}"
@@ -176,8 +176,8 @@ function do_help() {
     if [[ "${filter_type}" == "ful" ]]; then filter="^#[%/)+]"; fi
 
     \head -"${script_head:-99}" "${0}"                        \
-        | \grep --regexp="${filter:-y^#-}"                    \
-        | sed --expression="s/${filter:-^#-}//g"              \
+        | do_grep --regexp="${filter:-y^#-}"                    \
+        | do_sed --expression="s/${filter:-^#-}//g"              \
             --expression="s/\${script_name}/${script_name}/g"
 }
 
@@ -234,7 +234,7 @@ function log() {
         do_printf "${termlogformat}"
     fi
 
-    do_echo "${filelogformat}" | fold -w79 -s | sed '2~1s/^/  /' >> "${script_log:-/dev/null}"
+    do_echo "${filelogformat}" | fold -w79 -s | do_sed '2~1s/^/  /' >> "${script_log:-/dev/null}"
 }
 
 # shellcheck disable=SC2015
@@ -299,6 +299,12 @@ function do_rm() {
     command rm "${@}"                                            \
         && debug "(${BASH_LINENO[0]}) 'rm ${*}'"                 \
         || error "'rm ${*}' failed near line ${BASH_LINENO[0]}!"
+}
+
+function do_sed() {
+    command sed "${@}"                                            \
+        && debug "(${BASH_LINENO[0]}) 'sed ${*}'"                 \
+        || error "'sed ${*}' failed near line ${BASH_LINENO[0]}!"
 }
 
 function do_echo() {
