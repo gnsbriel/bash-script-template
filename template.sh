@@ -103,17 +103,17 @@ function script_init() {
 
     origin_cwd="${PWD}"
 
-    script_head=$(do_grep --no-messages --line-number "^# END_OF_HEADER" "${0}" | head -1 | cut --fields=1 --delimiter=:)
-    script_name="$(basename "${0}")"
-    script_dir="$(cd "$(dirname "${0}")" && \pwd )"
+    script_head=$(\grep --no-messages --line-number "^# END_OF_HEADER" "${0}" | \head -1 | cut --fields=1 --delimiter=:)
+    script_name="$(\basename "${0}")"
+    script_dir="$(\cd "$(\dirname "${0}")" && \pwd )"
     script_path="${script_dir}/${script_name}"
     script_params="${*}"
 
     script_log="/dev/null" # default is '/dev/null'
     script_loglevel=3  # default is 3
 
-    script_tempdir=$(mktemp --directory -t tmp.XXXXXXXXXX)
-    script_tempfile=$(mktemp -t tmp.XXXXXXXXXX)
+    script_tempdir=$(\mktemp --directory -t tmp.XXXXXXXXXX)
+    script_tempfile=$(\mktemp -t tmp.XXXXXXXXXX)
 
     #IFS=$'\n\t'
 }
@@ -144,13 +144,8 @@ function exit_trapper {
 
     trap - ERR # Disable the exit trap handler to prevent recursion
 
-    do_cd "${origin_cwd}" || warning "Couldn't cd back to '${origin_cwd}'"
-
-    do_rm --recursive --force "${script_tempdir}"        \
-        || warning "Couldn't remove '${script_tempdir}'"
-    do_rm --recursive --force "${script_tempfile}"        \
-        || warning "Couldn't remove '${script_tempfile}'"
-
+    do_cd "${origin_cwd}"
+    do_rm --recursive --force "${script_tempdir}" "${script_tempfile}"
     do_unset
 
     exit "${exitcode}"
@@ -176,8 +171,8 @@ function do_help() {
     if [[ "${filter_type}" == "ful" ]]; then filter="^#[%/)+]"; fi
 
     \head -"${script_head:-99}" "${0}"                        \
-        | do_grep --regexp="${filter:-y^#-}"                    \
-        | do_sed --expression="s/${filter:-^#-}//g"              \
+        | \grep --regexp="${filter:-y^#-}"                    \
+        | \sed --expression="s/${filter:-^#-}//g"             \
             --expression="s/\${script_name}/${script_name}/g"
 }
 
@@ -225,7 +220,7 @@ function log() {
     logcolors=( "$(color r)" "$(color g)" "$(color y)" "$(color g)" "$(color m)" "$(color b)" )
     loglevel="${loglevels[${1}]}"
     logcolor="${logcolors[${1}]}"
-    logdate=$(date +"%Y/%m/%d %H:%M:%S")
+    logdate=$(\date +"%Y/%m/%d %H:%M:%S")
 
     termlogformat="[${logdate}] ${logcolor}[${loglevel}]$(color nc) ${2}"
     filelogformat="[${logdate}] [${loglevel}] > ${FUNCNAME[3]} | ${2}"
@@ -234,7 +229,7 @@ function log() {
         do_printf "${termlogformat}"
     fi
 
-    do_echo "${filelogformat}" | fold -w79 -s | do_sed '2~1s/^/  /' >> "${script_log:-/dev/null}"
+    do_echo "${filelogformat}" | \fold --wwidth=79 --spaces | \sed '2~1s/^/  /' >> "${script_log:-/dev/null}"
 }
 
 # shellcheck disable=SC2015
@@ -301,6 +296,7 @@ function do_rm() {
         || error "'rm ${*}' failed near line ${BASH_LINENO[0]}!"
 }
 
+# shellcheck disable=SC2015
 function do_sed() {
     command sed "${@}"                                            \
         && debug "(${BASH_LINENO[0]}) 'sed ${*}'"                 \
@@ -458,7 +454,7 @@ function create() {
             done
             ;;
         * )
-            error "Usage: create [OPTION..] [PATH..]"
+            error "(${BASH_LINENO[0]}) Usage: create [OPTION..] [PATH..]"
             error ""
             error "Options:"
             error "    -f, --file"
@@ -479,7 +475,7 @@ function do_unset() {
         do_cd do_cp do_mv do_mkdir do_touch do_ln do_rm do_echo do_printf    \
         do_printf_n color check_binary validade_str do_countdown create main
 
-    unset -f do_unset # this ensures the 'do_unset' function is the last one.
+    unset -f do_unset # Ensures this function is the last one to unset.
 }
 
 # Section: Main Program
