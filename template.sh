@@ -109,7 +109,7 @@ function script_init() {
     script_path="${script_dir}/${script_name}"
     script_params="${*}"
 
-    script_log="/dev/null" # default is '/dev/null'
+    script_log="${script_dir}/.log" # default is '/dev/null'
     script_loglevel=3  # default is 3
 
     script_tempdir=$(\mktemp --directory -t tmp.XXXXXXXXXX)
@@ -229,7 +229,7 @@ function log() {
         do_printf "${termlogformat}"
     fi
 
-    do_echo "${filelogformat}" | \fold --wwidth=79 --spaces | \sed '2~1s/^/  /' >> "${script_log:-/dev/null}"
+    do_echo "${filelogformat}" | \fold --width=79 --spaces | \sed '2~1s/^/  /' >> "${script_log:-/dev/null}"
 }
 
 # shellcheck disable=SC2015
