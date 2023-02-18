@@ -313,7 +313,7 @@ function do_printf() {
     command printf "%b%b\n" "${*}" "$(color nc)" 2>/dev/null
 }
 
-function do_printf_n() {
+function do_printfn() {
 
     command printf "%b%b" "${*}" "$(color nc)" 2>/dev/null
 }
