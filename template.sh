@@ -408,7 +408,7 @@ function do_countdown() {
     seconds="${1:-5}"
 
     for ((i = seconds ; i > -1 ; i--)); do
-        do_printf_n "$(color e)Continuing in: ${i}\r"
+        do_printfn "$(color e)Continuing in: ${i}\r"
         sleep 1
     done
 
@@ -473,7 +473,7 @@ function do_unset() {
     unset -f script_init ctrl_c_trapper err_trapper exit_trapper help_usage  \
         help_full do_help critical error warning inf debug trace log do_grep \
         do_cd do_cp do_mv do_mkdir do_touch do_ln do_rm do_echo do_printf    \
-        do_printf_n color check_binary validade_str do_countdown create main
+        do_printfn color check_binary validade_str do_countdown create main
 
     unset -f do_unset # Ensures this function is the last one to unset.
 }
